@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 currentfolder = '/Users/stefanfarsang/Desktop/Test'  # folder for saving data, change it accordingly
 
 
-p_bar = 2000  # pressure in barsgit status
+p_bar = 2000  # pressure in bar
 t_c = 875  # temperature in Celsius (°C)
 t_k = t_c + 273.15  # temperature in Kelvin (K)
 fH2O = 1600.41  # H2O fugacity in bar from https://fluid-eos.web.psi.ch/EOS/calculator_simple.html
@@ -33,7 +33,7 @@ def fO2_nno(t_k, p_bar):
 
 
 # A function to calculate the SO2/H2S ratio
-def fluid_s_speciation(t_k, fO2, fH2O, fc_SO2, fc_H2S):
+def vapor_s_speciation(t_k, fO2, fH2O, fc_SO2, fc_H2S):
         logK = +4.13 + 19516/t_k # from Figure S4c
         K = 10 ** logK
         SO2_to_H2S_ratio = K * (fO2 ** 1.5) / fH2O * (fc_H2S / fc_SO2)
@@ -42,9 +42,9 @@ def fluid_s_speciation(t_k, fO2, fH2O, fc_SO2, fc_H2S):
 
 
 # A function to calculate the speciation curve
-def fluid_s_speciation_curve(buffer):
+def vapor_s_speciation_curve(buffer):
         oxygenfugacity = []
-        sulfide_to_total_S = []
+        H2S_to_total_S = []
         SO2_to_total_S = []
         logfO2_from = -4
         logfO2_to = +4
@@ -53,37 +53,37 @@ def fluid_s_speciation_curve(buffer):
                         oxygenfugacity.append(i / 1000)
                         result = fO2_fmq(t_k, p_bar)
                         logfO2 = result + i / 1000
-                        SO2_to_total_S_per_point = fluid_s_speciation(t_k, 10 ** logfO2, fH2O, fc_SO2, fc_H2S)
+                        SO2_to_total_S_per_point = vapor_s_speciation(t_k, 10 ** logfO2, fH2O, fc_SO2, fc_H2S)
                         SO2_to_total_S.append(SO2_to_total_S_per_point)
-                        sulfide_to_total_S_per_point = 1 - fluid_s_speciation(t_k, 10 ** logfO2, fH2O, fc_SO2, fc_H2S)
-                        sulfide_to_total_S.append(sulfide_to_total_S_per_point)
+                        H2S_to_total_S_per_point = 1 - vapor_s_speciation(t_k, 10 ** logfO2, fH2O, fc_SO2, fc_H2S)
+                        H2S_to_total_S.append(H2S_to_total_S_per_point)
         if buffer == 'NNO':
                 for i in range(logfO2_from*1000, logfO2_to*1000, 1):
                         oxygenfugacity.append(i/1000)
                         result = fO2_nno(t_k, p_bar)
                         logfO2 = result + i / 1000
-                        SO2_to_total_S_per_point = fluid_s_speciation(t_k, 10 ** logfO2, fH2O, fc_SO2, fc_H2S)
+                        SO2_to_total_S_per_point = vapor_s_speciation(t_k, 10 ** logfO2, fH2O, fc_SO2, fc_H2S)
                         SO2_to_total_S.append(SO2_to_total_S_per_point)
-                        sulfide_to_total_S_per_point = 1 - fluid_s_speciation(t_k, 10 ** logfO2, fH2O, fc_SO2, fc_H2S)
-                        sulfide_to_total_S.append(sulfide_to_total_S_per_point)
-        return oxygenfugacity, sulfide_to_total_S, SO2_to_total_S
+                        H2S_to_total_S_per_point = 1 - vapor_s_speciation(t_k, 10 ** logfO2, fH2O, fc_SO2, fc_H2S)
+                        H2S_to_total_S.append(H2S_to_total_S_per_point)
+        return oxygenfugacity, H2S_to_total_S, SO2_to_total_S
 
 
 # A function to save figure as png, tiff, and jpg files
 def savefigure(buffer):
         plt.figure(figsize=(8, 4))
-        oxygenfugacity, H2S_to_total_S, SO2_to_total_S = fluid_s_speciation_curve(buffer)
+        oxygenfugacity, H2S_to_total_S, SO2_to_total_S = vapor_s_speciation_curve(buffer)
         plt.plot(oxygenfugacity, H2S_to_total_S, label='H2S', linestyle="-", linewidth=2, color='green')
         plt.plot(oxygenfugacity, SO2_to_total_S, label='SO2', linestyle="-", linewidth=2, color='red')
-        plt.title('Sulfur Speciation at ' + str(p_bar) + ' bar and ' + str(t_c) + '°C')
+        plt.title('Sulfur Speciation in Vapor at ' + str(p_bar) + ' bar and ' + str(t_c) + '°C')
         plt.xlabel('fO2(Δ' + buffer + ')')
         plt.ylabel('Fraction of Total Sulfur')
         plt.legend()
         plt.xlim([-4, 4])
         plt.ylim([0, 1])
-        plt.savefig(currentfolder+'/SulfurSpeciation_' + str(t_c) + 'C_' + buffer + '.png')
-        plt.savefig(currentfolder + '/SulfurSpeciation_' + str(t_c) + 'C_' + buffer + '.tiff')
-        plt.savefig(currentfolder + '/SulfurSpeciation_' + str(t_c) + 'C_' + buffer + '.jpg')
+        plt.savefig(currentfolder+'/SulfurSpeciationInVapor_' + str(t_c) + 'C_' + buffer + '.png')
+        plt.savefig(currentfolder + '/SulfurSpeciationInVapor_' + str(t_c) + 'C_' + buffer + '.tiff')
+        plt.savefig(currentfolder + '/SulfurSpeciationInVapor_' + str(t_c) + 'C_' + buffer + '.jpg')
 
 
 savefigure('NNO')
@@ -92,11 +92,11 @@ savefigure('FMQ')
 
 # A function to save data as csv and txt files
 def savedata(buffer):
-        oxygenfugacity, H2S_to_total_S, SO2_to_total_S = fluid_s_speciation_curve(buffer)
+        oxygenfugacity, H2S_to_total_S, SO2_to_total_S = vapor_s_speciation_curve(buffer)
         datatosave = zip(oxygenfugacity, H2S_to_total_S, SO2_to_total_S)
         datatosave = pd.DataFrame(datatosave)
-        datatosave.to_csv(currentfolder+'/SulfurSpeciation_' + str(t_c) + 'C_' + buffer + '.csv', sep='\t', header=[('Δ'+buffer),'H2S','SO2'], index=False)
-        datatosave.to_csv(currentfolder+'/SulfurSpeciation_' + str(t_c) + 'C_' + buffer + '.txt', sep='\t', header=[('Δ' + buffer), 'H2S', 'SO2'], index=False)
+        datatosave.to_csv(currentfolder+'/SulfurSpeciationInVapor_' + str(t_c) + 'C_' + buffer + '.csv', sep='\t', header=[('Δ'+buffer),'H2S','SO2'], index=False)
+        datatosave.to_csv(currentfolder+'/SulfurSpeciationInVapor_' + str(t_c) + 'C_' + buffer + '.txt', sep='\t', header=[('Δ' + buffer), 'H2S', 'SO2'], index=False)
 
 
 savedata('NNO')
